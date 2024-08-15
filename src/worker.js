@@ -44,7 +44,8 @@ emulator.add_listener("serial0-output-byte", function(byte) {
     } else if(shellout.endsWith("#") && ((shellout.search("root@") >= 0))) {
         if(emulator.shellready == true) {
             //only send back data if commands were run
-            var arr = shellout.split("\n").slice(1,shellout.length-1);//array of output lines
+            var arr = shellout.split("\n");//array of output lines
+            arr = arr.slice(1,arr.length-1);
             postMessage({ //send output back
                 cmdout: arr
             });
