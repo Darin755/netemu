@@ -2,13 +2,13 @@ importScripts("libs/v86/libv86.js");
 
 //startup
 var emulator = new V86({
-    wasm_path: "/libs/v86/v86.wasm",
+    wasm_path: "libs/v86/v86.wasm",
     memory_size: 128 * 1024 * 1024,
     bios: {
-        url: "/libs/bios/seabios.bin",
+        url: "libs/bios/seabios.bin",
     },
     hda: {
-        url: "/libs/openwrt/openwrt-23.05.4-842eb409e51b-x86-legacy-generic-squashfs-combined.img.zst",
+        url: "libs/openwrt/openwrt-23.05.4-842eb409e51b-x86-legacy-generic-squashfs-combined.img.zst",
         size: 126353408
     },
     autostart: true,
