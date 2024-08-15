@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<head>
+<script src="/libs/v86/libv86.js"></script>
+</head>
+<body>
+    <script>
+        "use strict";
+        
+        window.onload = function()
+        {
+            var emulator = window.emulator = new V86({
+                wasm_path: "/libs/v86/v86.wasm",
+                memory_size: 128 * 1024 * 1024,
+                vga_memory_size: 2 * 1024 * 1024,
+                screen_container: document.getElementById("console"),
+                bios: {
+                    url: "/libs/bios/seabios.bin",
+                },
+                vga_bios: {
+                    url: "/libs/bios/vgabios.bin",
+                },
+                hda: {
+                    url: "/libs/openwrt/openwrt-23.05.4-842eb409e51b-x86-legacy-generic-squashfs-combined.img.zst",
+                    size: 126353408
+                },
+                autostart: true,
+            });
+
+            //start worker
+            var worker1 = new Worker("worker.js");
+            document.getElementById("worker status").innerHTML = "worker starting";
+
+            window.worker1 = worker1;
+
+
+            var flag = true;
+            worker1.onmessage = function(e) {
+                if(e.data.packet) {
+                    //direct
+                    emulator.bus.send("net0-receive", e.data.packet);
+                    if(flag) {
+                        console.log("worker1 mac "+a2ethaddr(e.data.packet.subarray(6, 12)));
+                        flag=false;
+                    }
+              //  } else if(e.data.mac) {
+              //      console.log("worker1 mac "+e.data.mac);
+                } else if(e.data.boot == true) {
+                    document.getElementById("worker status").innerHTML = "worker booted";
+                } else if(e.data.cmdout) {
+                    console.log(e.data.cmdout);
+                }
+            }
+
+            emulator.add_listener("net0-mac", function(mac) {
+                emulator.mac = mac;
+                console.log("our mac "+mac);
+            });
+
+            emulator.add_listener("net0-send", function(packet) {
+               worker1.postMessage({
+                //    mac: emulator.mac,
+                    packet: packet
+               });
+            });
+
+            window.datat = "";
+
+            emulator.add_listener("serial0-output-byte", function(byte) {
+                var char = String.fromCharCode(byte);
+                if(char != '\r') {
+                    window.datat+=char;
+                }
+            });
+
+        }//end of onload
+
+
+
+        function a2ethaddr(bytes) {
+            return [0,1,2,3,4,5].map((i) => bytes[i].toString(16)).map(x => x.length === 1 ? "0" + x : x).join(":");
+        };
+        </script>
+
+<div id="console">
+    <div style="white-space: pre; font: 14px monospace; line-height: 14px"></div>
+    <canvas style="display: none"></canvas>
+</div>
+
+<p id="worker status">...</p>
+
+<p>Run the following:</p>
+<p>uci set network.lan.proto='dhcp'</p>
+<p>uci commit</p>
+<p>/etc/init.d/network restart</p>
+<p>(wait a few minutes)</p>
+<p>ip a (You should see an address that is in the 192.168.1.x subnet)</p>
+<p>try ping -c 5 192.168.1.1</p>
+
+</body>
